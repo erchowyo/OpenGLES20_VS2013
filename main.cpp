@@ -16,7 +16,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 
     CELL::CELLWinApp  app(hInstance);
-    app.main(800,600);
+    app.main(600,600);
 
     return 0;
 }
