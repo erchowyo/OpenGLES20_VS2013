@@ -3,6 +3,10 @@
 #include <tchar.h>
 #include <EGL/egl.h>
 #include <gles2/gl2.h>
+
+#include "CELLMath.hpp"
+#include "CELLShader.hpp"
+
 namespace CELL
 {
 	class CELLWinApp
@@ -15,13 +19,15 @@ namespace CELL
 		//! 窗口高度
 		int _width;
 		//! 窗口宽度
-		int _heigth;
+		int _height;
 		//! for opengles2.0
 		EGLDisplay display;
 		EGLSurface window;
 		EGLConfig config;
 		EGLContext context;
 		
+		//! 增加shader
+		PROGRAM_P2_C4 _shader;
 	public:
 		CELLWinApp(HINSTANCE hInstance)
 			:_hInstance(hInstance)
@@ -120,7 +126,7 @@ namespace CELL
 			}
 
 			eglQuerySurface(display, window, EGL_WIDTH, &_width);
-			eglQuerySurface(display, window, EGL_HEIGHT, &_heigth);
+			eglQuerySurface(display, window, EGL_HEIGHT, &_height);
 
 			return EGL_TRUE;
 
@@ -184,19 +190,64 @@ namespace CELL
 		/*绘制函数*/
 		virtual void render()
 		{
-			glClearColor(0, 1, 0, 1);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glViewport(0, 0, _width, _heigth);
+			//glClearColor(0, 1, 0, 1);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			//glViewport(0, 0, _width, _heigth);
+			GLfloat vVertices[]={
+					0.0f,0.5f,0.0f,
+					-0.5f,-0.5f,0.0f,
+					0.5f,-0.5f,0.0f
+			};
+			glViewport(0,0,_width,_height);
+			glClear(GL_COLOR_BUFFER_BIT);
+			//glUseProgram();
+			glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,vVertices);
+			glEnableVertexAttribArray(0);
+			glDrawArrays(GL_TRIANGLES,0,3);
 		}
+		virtual void    render2()
+        {
+            //! 清空缓冲区
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+            //! 视口，在Windows窗口指定的位置和大小上绘制OpenGL内容
+            glViewport(0,0,_width,_height);
 
+            //! 创建一个投影矩阵
+			//扩展学习正交投影矩阵，透视投影glOrthodox（）、gluPerspective（）
+            CELL::matrix4   screenProj  =   CELL::ortho<float>(0,float(_width),float(_height),0,-100.0f,100);//映射到窗口坐标
+			/*char *uniforname;//不匹配
+			const GLfloat *uniforname;
+			GLint maxUniformLen;
+			uniforname = malloc(sizeof(char) *maxUniformLen);*/
+            _shader.begin();
+            {//起始位置和宽高
+                float   x   =   100;
+                float   y   =   50;
+                float   w   =   100;
+                float   h   =   100;
+                CELL::float2  pos[]   =   
+                {//50,50,50,50,50,50,50,50,
+                     CELL::float2(x,y),
+                     CELL::float2(x + w,y),
+                     CELL::float2(x,y + h),
+                     CELL::float2(x + w, y + h),
+                };
+                glUniformMatrix4fv(_shader._MVP, 1, false,screenProj.data());//给MVP赋值。这里学习下显卡程序，vertex/Fragment shader
+                glUniform4f(_shader._color,1,0,0,1);//要画的颜色，红色1 0 0
+              	glVertexAttribPointer(_shader._position,2,GL_FLOAT,false,sizeof(CELL::float2),pos);
+                glDrawArrays(GL_TRIANGLE_STRIP,0,4);//赋值完再调用才能执行。调用的次数4次，每次_position的值变化，因而设置为局部变量，而_MVP的值不变，故为全局变量Uniform
+            }
+            _shader.end();
+
+        }
 		//! 主函数
 		int main(int width,int height){
 			_hWnd = CreateWindowEx( NULL,
 										_T("CELLWinApp"),
 										_T("CELLWinApp"),
 										WS_OVERLAPPEDWINDOW,
-										0,//CW_USEDEFAULT,//0,
-										0,//CW_USEDEFAULT,//0,
+										CW_USEDEFAULT,//0,
+										CW_USEDEFAULT,//0,
 										width,
 										height, 
 										0, 
@@ -215,6 +266,7 @@ namespace CELL
 			{
 				return false;
 			}
+			_shader.initialize();
 
 			MSG msg = { 0 };
 			while (msg.message != WM_QUIT)
@@ -232,7 +284,7 @@ namespace CELL
 				}
 				else
 				{
-					render();
+					render2();
 					eglSwapBuffers(display,window);
 					//Sleep(1);
 				}
