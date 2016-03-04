@@ -1,158 +1,290 @@
 #pragma once
-#include <assert.h>//message
-/*
-// class ShaderId
-// {
-// public:
-// 	ShaderId()//构造函数，用于初始化变量
-// 	{
-// 		_shaderid  =  -1;
-// 	}
-// 	int _shaderid;
-// };
-// 
-// class ProgramId
-// {
-// public:
-// 	int _programid;
-// 
-// 	ProgramId()//构造函数，用于初始化变量
-// 	{
-// 		_programid  =  -1;
-// 	}
-// 	
-// 	bool creatProgram(const char* vertex,const char* fragment)
-// 	{
-// 
-// 	}
-// protected:
-// private:
-// };
-*/
 
-class CreatShaderProgram
+#include <assert.h>
+
+class    ShaderId
 {
 public:
-	GLuint ProgramObject;//creat program obbject
-
-	//! create a shader object ,load the shader source and compile the shader 
-	GLuint LoadShader(GLenum type,const char *shaderSrc)
-	{
-		GLuint shader;
-		GLint  compiled;
-		bool error = false;
-		//create the shader object
-		shader = glCreateShader(type);
-		if (shader == 0 )
-		{
-			return 0;
-		}
-		//load the shader source
-		glShaderSource(shader,1,&shaderSrc,NULL);
-
-		//compile the shader 
-		glCompileShader(shader);
-
-		//check the compole status
-		glGetShaderiv(shader,GL_COMPILE_STATUS,&compiled);
-		//! 如果GL_COMPILE_STATUS编译错误将打印信息
-		if (!compiled)
-		{
-			GLint infoLen;
-			glGetShaderiv(shader,GL_INFO_LOG_LENGTH,&infoLen);//查询日志长度
-			error  =  infoLen==GL_FALSE;
-
-			if (error)
-			{
-				GLchar messages[256];
-				//char* infoLog = malloc(sizeof(char) * infoLen);
-				glGetShaderInfoLog(shader,sizeof(messages),NULL,messages);//检索信息日志
-				assert( messages && 0 != 0);//断言，错误时弹窗
-
-			}
-			glDeleteShader(shader);
-			return 0;
-		}
-			return shader;
-		}
-
+    ShaderId()
+    {
+        _shaderId   =   -1;
+    }
+    int _shaderId;
 };
 
-class ProgramShader : public CreatShaderProgram
+
+/**
+*   程序
+*/
+class   ProgramId
 {
 public:
-	GLuint programObject;
+    int         _programId;
+    ShaderId    _vertex;
+    ShaderId    _fragment;
+public:
+    ProgramId()
+    {
+        _programId  =   -1;
+    }
+public:
+    /**
+    *   加载函数
+    */
+    bool    createProgram( const char* vertex,const char* fragment )
+    {
+        bool        error   =   false;
+        do 
+        {
+            if (vertex)
+            {
+                _vertex._shaderId   = glCreateShader( GL_VERTEX_SHADER );
+                glShaderSource( _vertex._shaderId, 1, &vertex, 0 );
+                glCompileShader( _vertex._shaderId );
 
-	ProgramShader()
-	{
+                GLint   compileStatus;
+                glGetShaderiv( _vertex._shaderId, GL_COMPILE_STATUS, &compileStatus );
+                error   =   compileStatus == GL_FALSE;
+                if( error )
+                {
+                    GLchar messages[256];
+                    glGetShaderInfoLog( _vertex._shaderId, sizeof(messages), 0,messages);
+                    assert( messages && 0 != 0);
+                    break;
+                }
+            }
+            if (fragment)
+            {
+                _fragment._shaderId   = glCreateShader( GL_FRAGMENT_SHADER );
+                glShaderSource( _fragment._shaderId, 1, &fragment, 0 );
+                glCompileShader( _fragment._shaderId );
 
-	}
-	~ProgramShader()
-	{
+                GLint   compileStatus;
+                glGetShaderiv( _fragment._shaderId, GL_COMPILE_STATUS, &compileStatus );
+                error   =   compileStatus == GL_FALSE;
 
-	}
-	virtual bool initialize()
-	{
-		//const char* vShaderStr[]=;
-		bool error1=false;
-		const char vShaderStr[] =  
-			"attribute vec4 vPosition;    \n"
-			"void main()                  \n"
-			"{                            \n"
-			"   gl_Position = vPosition;  \n"
-			"}                            \n";
+                if( error )
+                {
+                    GLchar messages[256];
+                    glGetShaderInfoLog( _fragment._shaderId, sizeof(messages), 0,messages);
+                    assert( messages && 0 != 0);
+                    break;
+                }
+            }
+            _programId  =   glCreateProgram( );
 
-		const char fShaderStr[] =  
-			"precision mediump float;                     \n"
-			"void main()                                  \n"
-			"{                                            \n"
-			"  gl_FragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );\n"
-			"}                                            \n";
-		
-		GLuint vertexShader;
-		GLuint fragmentShader;
-		
-		GLint linked;
+            if (_vertex._shaderId)
+            {
+                glAttachShader( _programId, _vertex._shaderId);
+            }
+            if (_fragment._shaderId)
+            {
+                glAttachShader( _programId, _fragment._shaderId);
+            }
 
-		vertexShader    =  LoadShader(GL_VERTEX_SHADER,vShaderStr);
-		fragmentShader  =  LoadShader(GL_FRAGMENT_SHADER,fShaderStr);
-		//creat program obbject
-		ProgramObject = glCreateProgram();
-		if (ProgramObject == 0)		
-			return 0;
+            glLinkProgram( _programId );
 
-			glAttachShader(programObject,vertexShader);
-			glAttachShader(programObject,fragmentShader);
+            GLint linkStatus;
+            glGetProgramiv( _programId, GL_LINK_STATUS, &linkStatus );
+            if (linkStatus == GL_FALSE)
+            {
+                GLchar messages[256];
+                glGetProgramInfoLog( _programId, sizeof(messages), 0, messages);
+                break;
+            }
+            glUseProgram(_programId);
 
-			//link the program 
-			glLinkProgram(programObject);
+        } while(false);
 
-			//check the link status 
-			glGetProgramiv(programObject,GL_LINK_STATUS,&linked);
-			if (!linked)
-			{
-				GLint infoLen = 0;
-				glGetProgramiv(programObject,GL_INFO_LOG_LENGTH,&infoLen);
+        if (error)
+        {
+            if (_fragment._shaderId)
+            {
+                glDeleteShader(_fragment._shaderId);
+                _fragment._shaderId =   0;
+            }
+            if (_vertex._shaderId)
+            {
+                glDeleteShader(_vertex._shaderId);
+                _vertex._shaderId   =   0;
+            }
+            if (_programId)
+            {
+                glDeleteProgram(_programId);
+                _programId          =   0;
+            }
+        }
+        return  true;
+    }
 
-				
-				error1  =  infoLen==GL_FALSE;
+    /**
+    *   使用程序
+    */
+    virtual void    begin()
+    {
+        glUseProgram(_programId);
+        
+    }
+    /**
+    *   使用完成
+    */
+    virtual void    end()
+    {
+        glUseProgram(0);
+    }
+};
 
-				if (error1)
-				{
-					GLchar messages[256];
-					//char* infoLog = malloc(sizeof(char) * infoLen);
-					glGetShaderInfoLog(programObject,sizeof(messages),NULL,messages);
-					assert( messages && 0 != 0);//断言，错误时弹窗
 
-				}
+class   PROGRAM_P2_AC4 :public ProgramId
+{
+public:
+    typedef int attribute; 
+    typedef int uniform;
+public:
+    attribute   _position;
+    attribute   _color;
+    uniform     _MVP;
+public:
+    PROGRAM_P2_AC4()
+    {
+        _position   =   -1;
+        _color      =   -1;
+        _MVP        =   -1;
+    }
+    ~PROGRAM_P2_AC4()
+    {
+    }
+   
+    /// 初始化函数
+    virtual bool    initialize()
+    {
+        const char* vs  =   
+        {
+            "precision lowp float; "
+            "uniform   mat4 _MVP;"
+            "attribute vec2 _position;"
+            "attribute vec4 _color;"
+            "varying   vec4 _outColor;"
 
-				glDeleteProgram ( programObject );
-				return FALSE;
-			}
-			glClearColor ( 0.0f, 0.0f, 0.0f, 0.0f );
-			return TRUE;	
-	
-	}
+            "void main()"
+            "{"
+            "   vec4    pos =   vec4(_position,0,1);"
+            "   _outColor   =   _color;"
+            "   gl_Position =   _MVP * pos;"
+            "}"
+        };
+        const char* ps  =   
+        {
+            "precision  lowp float; "
+            "varying   vec4 _outColor;"
+            "void main()"
+            "{"
+            "   gl_FragColor   =   _outColor;"
+            "}"
+        };
+        
+        bool    res =   createProgram(vs,ps);
+        if(res)
+        {
+            _position   =   glGetAttribLocation(_programId, "_position");
+            _color      =   glGetAttribLocation(_programId, "_color");
+            _MVP        =   glGetUniformLocation(_programId,"_MVP");
+        }
+        return  res;
+    }
 
-	
+    /**
+    *   使用程序
+    */
+    virtual void    begin()
+    {
+        glUseProgram(_programId);
+        glEnableVertexAttribArray(_position);
+        glEnableVertexAttribArray(_color);
+        
+    }
+    /**
+    *   使用完成
+    */
+    virtual void    end()
+    {
+        glDisableVertexAttribArray(_position);
+        glDisableVertexAttribArray(_color);
+        glUseProgram(0);
+    }
+};
+
+
+class   PROGRAM_P2_C4 :public ProgramId
+{
+public:
+    typedef int attribute; 
+    typedef int uniform;
+public:
+    attribute   _position;
+    uniform     _color;
+    uniform     _MVP;
+public:
+    PROGRAM_P2_C4()
+    {
+        _position   =   -1;
+        _color      =   -1;
+        _MVP        =   -1;
+    }
+    ~PROGRAM_P2_C4()
+    {
+    }
+   
+    /// 初始化函数
+    virtual bool    initialize()
+    {
+        const char* vs  =   
+        {
+            "precision lowp float; "
+            "uniform   mat4 _MVP;"
+            "attribute vec2 _position;"
+
+            "void main()"
+            "{"
+            "   vec4    pos =   vec4(_position,0,1);"
+            "   gl_Position =   _MVP * pos;"
+            "}"
+        };
+        const char* ps  =   
+        {
+            "precision  lowp float; "
+            "uniform    vec4 _color;"
+            "void main()"
+            "{"
+            "   gl_FragColor   =   _color;"
+            "}"
+        };
+        
+        bool    res =   createProgram(vs,ps);
+        if(res)
+        {
+            _position   =   glGetAttribLocation(_programId,"_position");
+            _color      =   glGetUniformLocation(_programId,"_color");
+            _MVP        =   glGetUniformLocation(_programId,"_MVP");
+        }
+        return  res;
+    }
+
+    /**
+    *   使用程序
+    */
+    virtual void    begin()
+    {
+        glUseProgram(_programId);
+        glEnableVertexAttribArray(_position);
+        
+    }
+    /**
+    *   使用完成
+    */
+    virtual void    end()
+    {
+        glDisableVertexAttribArray(_position);
+        glUseProgram(0);
+    }
 };
