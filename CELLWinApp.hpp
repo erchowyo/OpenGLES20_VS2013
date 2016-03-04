@@ -267,8 +267,8 @@ namespace CELL
 			glEnableVertexAttribArray ( 0 );
 
 			glDrawArrays ( GL_TRIANGLES, 0, 3 );
+			glDeleteProgram(_shader.ProgramObject);
 
-			//eglSwapBuffers ( esContext->eglDisplay, esContext->eglSurface );
 		}
 
 		//! Ö÷º¯Êý
@@ -297,8 +297,7 @@ namespace CELL
 			{
 				return false;
 			}
-//			_shader.initialize();
-			_shader.initialize();
+			//_shader.initialize();
 
 			MSG msg = { 0 };
 			while (msg.message != WM_QUIT)
