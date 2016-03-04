@@ -298,6 +298,7 @@ namespace CELL
 				return false;
 			}
 //			_shader.initialize();
+			_shader.initialize();
 
 			MSG msg = { 0 };
 			while (msg.message != WM_QUIT)
@@ -312,6 +313,7 @@ namespace CELL
 				{
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
+
 				}
 				else
 				{

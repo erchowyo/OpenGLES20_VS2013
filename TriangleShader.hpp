@@ -55,21 +55,25 @@ public:
 
 		//check the compole status
 		glGetShaderiv(shader,GL_COMPILE_STATUS,&compiled);
-
+		//! 如果GL_COMPILE_STATUS编译错误将打印信息
+		if (!compiled)
+		{
 			GLint infoLen;
-			glGetShaderiv(shader,GL_INFO_LOG_LENGTH,&infoLen);
+			glGetShaderiv(shader,GL_INFO_LOG_LENGTH,&infoLen);//查询日志长度
 			error  =  infoLen==GL_FALSE;
 
 			if (error)
 			{
 				GLchar messages[256];
 				//char* infoLog = malloc(sizeof(char) * infoLen);
-				glGetShaderInfoLog(shader,sizeof(messages),NULL,messages);
+				glGetShaderInfoLog(shader,sizeof(messages),NULL,messages);//检索信息日志
 				assert( messages && 0 != 0);//断言，错误时弹窗
-				
+
 			}
 			glDeleteShader(shader);
 			return 0;
+		}
+			return shader;
 		}
 
 };
@@ -90,14 +94,15 @@ public:
 	virtual bool initialize()
 	{
 		//const char* vShaderStr[]=;
-		GLbyte vShaderStr[] =  
+		bool error1=false;
+		const char vShaderStr[] =  
 			"attribute vec4 vPosition;    \n"
 			"void main()                  \n"
 			"{                            \n"
 			"   gl_Position = vPosition;  \n"
 			"}                            \n";
 
-		GLbyte fShaderStr[] =  
+		const char fShaderStr[] =  
 			"precision mediump float;                     \n"
 			"void main()                                  \n"
 			"{                                            \n"
@@ -109,8 +114,8 @@ public:
 		
 		GLint linked;
 
-		vertexShader    =  LoadShader(GL_VERTEX_SHADER,&vShaderStr);
-		fragmentShader  =  LoadShader(GL_FRAGMENT_SHADER,&fShaderStr);
+		vertexShader    =  LoadShader(GL_VERTEX_SHADER,vShaderStr);
+		fragmentShader  =  LoadShader(GL_FRAGMENT_SHADER,fShaderStr);
 		//creat program obbject
 		ProgramObject = glCreateProgram();
 		if (ProgramObject == 0)		
@@ -128,14 +133,17 @@ public:
 			{
 				GLint infoLen = 0;
 				glGetProgramiv(programObject,GL_INFO_LOG_LENGTH,&infoLen);
-				if ( infoLen > 1 )
+
+				
+				error1  =  infoLen==GL_FALSE;
+
+				if (error1)
 				{
-					char* infoLog = malloc (sizeof(char) * infoLen );
+					GLchar messages[256];
+					//char* infoLog = malloc(sizeof(char) * infoLen);
+					glGetShaderInfoLog(programObject,sizeof(messages),NULL,messages);
+					assert( messages && 0 != 0);//断言，错误时弹窗
 
-					glGetProgramInfoLog ( programObject, infoLen, NULL, infoLog );
-					//esLogMessage ( "Error linking program:\n%s\n", infoLog );            
-
-					free ( infoLog );
 				}
 
 				glDeleteProgram ( programObject );
